@@ -1,3 +1,4 @@
+import sys
 from vosk_recasepunc.recasepunc import WordpieceTokenizer, Config
 from concurrent.futures import ThreadPoolExecutor
 from urllib.request import urlopen
@@ -34,13 +35,24 @@ class TranscriberServicer(transcribe_pb2_grpc.TranscriberServicer):
         logging.info("Finished transcription of {}".format(recording_id))
         return transcribe_pb2.TranscriptionResult(text=text)
 
+def run():
+    """
+    Runs the gRPC transcriber service on the provided port; if not port is given, a default port
+    of 50051 is used.
+    """
+    port = 50051 #default
+    if len(sys.argv) > 1:
+        port = int(sys.argv[2])
 
-if __name__ == "__main__":
     server = grpc.server(ThreadPoolExecutor())
     transcribe_pb2_grpc.add_TranscriberServicer_to_server(TranscriberServicer(), server)
-    server_address = "[::]:50051"
+    server_address = "[::]:{}".format(port)
     server.add_insecure_port(server_address)
     logging.info("Starting gRPC service on {}".format(server_address))
     server.start()
     server.wait_for_termination()
     logging.info("Service Terminated")
+
+
+if __name__ == "__main__":
+    run()

@@ -1,12 +1,12 @@
-
 from dataclasses import dataclass
 from signalwire.relay.consumer import Consumer
 from signalwire.relay.calling import Call
 from signalwire.relay.calling.constants import MediaType, CallRecordState
 import logging, asyncio
 
-import transcriber
-#from voicemail.database.database import VoicemailDB
+from voicemail_db.database import VoicemailDatabase
+from transcriber import Transcriber
+
 
 MAX_MSG_DURATION = 60
 
@@ -22,24 +22,28 @@ class Voicemail(Consumer):
     The voicemail consumer. This service handles calls received with a voicemail prompt,
     and records messages.
     """
-    def __init__(self, project_id: str, token: str):
+    def __init__(self, project: str, token: str, db: str, transcriber: str | None=None):
         super().__init__()
         # Required by RELAY
-        self.project = project_id
+        self.project = project
         self.token = token
         self.contexts = ["voicemail"]
 
         self.language = "en-CA"
-        #self.database = VoicemailDB(db_url)
+        self.database = VoicemailDatabase(db)
+        self.transcriber = Transcriber(transcriber)
 
     async def on_incoming_call(self, call: Call):
         """
         Handles incoming calls the voicemail consumer.
         """
         logging.info("Call Received: {} to {}".format(call.from_number, call.to_number))
-        #user = await self.database.get_user(call.to_number)
-        #blockedList = await self.database.get_blocked_numbers
-        # TODO: if call is not in blocked list
+        recipient = await self.database.get_user(call.to_number)
+        blocked = await self.database.get_blocked(recipient.id)
+        if call.from_number in blocked:
+            await call.hangup()
+            return
+
         result = await call.answer()
         if result.successful:
             await call.play([
@@ -51,17 +55,20 @@ class Voicemail(Consumer):
                             "To finish recording, you may hang up, or press pound. "
                 },
             ])
-            await asyncio.sleep(0.5)
-            recording = await call.record_async(
-                beep=True, direction="speak", record_format="wav", initial_timeout=3)
-
+            recording = await call.record_async(beep=True, direction="speak", record_format="wav")
             for _ in range(MAX_MSG_DURATION):
                 if recording.completed:
                     if recording.result.successful and recording.state == CallRecordState.FINISHED:
+                        transcription = self.transcriber.transcribe(recording.result.url)
+
+                        id = await self.database.insert_voicemail(
+                            recipient.id,
+                            call.from_number,
+                            recording.result.url)
+
+                        await self.database.update_voicemail_transcription(id, await transcription)
+
                         logging.info("Call Recorded:{} to {}".format(call.from_number, call.to_number))
-                        transcription = transcriber.transcribe(recording.result.url)
-                        print(transcription)
-                        # TODO: add message to database
                     break
                 await asyncio.sleep(1)
             await recording.stop()
@@ -69,11 +76,17 @@ class Voicemail(Consumer):
         logging.info("Call Ended: {} to {}".format(call.from_number, call.to_number))
 
 
-if __name__ =="__main__":
+def run():
     import os
 
     project = os.environ.get("SIGNALWIRE_PROJECT")
     token = os.environ.get("SIGNALWIRE_API_TOKEN")
+    transcriber_url = os.environ.get("TRANSCRIBER_GRPC_URL")
+    db_url = os.environ.get("POSTGRES_URL")
 
-    voicemail_consumer = Voicemail(project, token)
+    voicemail_consumer = Voicemail(project, token, db=db_url, transcriber=transcriber_url)
     voicemail_consumer.run()
+
+
+if __name__ =="__main__":
+    run()

@@ -16,7 +16,7 @@ class Transcriber(object):
         self._use_casepunc = use_casepunc
         if use_casepunc:
             self._cp_predictor = CasePuncPredictor(
-                "vosk_recasepunc/checkpoint",
+                "transcriber/vosk_recasepunc/checkpoint",
                 lang="en",
                 device="cpu")
 

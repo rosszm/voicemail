@@ -10,7 +10,7 @@ and a lack of carrier voicemail functionality.
 This is the primary client for the voicemail services. It provides standard and visual voicemail
 features, and push notifications for new voicemail messages.
 
-## Micro-Services
+## Services
 ### [API Service](api-service)
 This service acts as the interface between client applications and the voicemail system. It supports
 requests through its REST API.

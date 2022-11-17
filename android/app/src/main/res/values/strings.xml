@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">Voicemail</string>
+    <string name="call_back">Call back</string>
+    <string name="send_text">Send text</string>
+    <string name="transcription">Transcription</string>
+    <string name="block_number">Block number</string>
+    <string name="add_contact">Add contact</string>
+    <string name="view_contact">View contact</string>
+    <string name="just_now">Just now</string>
+    <string name="yesterday">Yesterday</string>
+    <string name="back">Back</string>
+    <string name="delete">Delete</string>
+    <string name="more">More</string>
+    <string name="inbox_empty">You don\'t have any voicemail messages yet</string>
+
+    <plurals name="minutes_ago_short">
+        <item quantity="one">%d min ago</item>
+        <item quantity="other">%d mins ago</item>
+    </plurals>
 </resources>

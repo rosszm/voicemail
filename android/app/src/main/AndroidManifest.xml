@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
 
     <application
         android:allowBackup="true"
@@ -12,7 +15,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Voicemail"
-        android:name = "dev.zacharyross.voicemail.VoicemailHiltApp"
+        android:name="dev.zacharyross.voicemail.VoicemailHiltApp"
+        android:enableOnBackInvokedCallback="true"
         tools:targetApi="33">
         <activity
             android:name="dev.zacharyross.voicemail.MainActivity"
@@ -29,6 +33,14 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+        <service
+            android:name=".data.service.PlaybackService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService"/>
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>

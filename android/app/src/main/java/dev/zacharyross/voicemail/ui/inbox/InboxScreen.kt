@@ -18,7 +18,11 @@ import com.google.accompanist.permissions.rememberPermissionState
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.annotation.RootNavGraph
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import dev.zacharyross.voicemail.domain.model.Voicemail
 import dev.zacharyross.voicemail.ui.destinations.VoicemailScreenDestination
+import dev.zacharyross.voicemail.ui.model.VoicemailUiModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
@@ -27,21 +31,22 @@ import dev.zacharyross.voicemail.ui.destinations.VoicemailScreenDestination
 @Composable
 fun InboxScreen(
     navigator: DestinationsNavigator,
-    inboxViewModel: InboxViewModel = hiltViewModel()
+    viewModel: InboxViewModel = hiltViewModel(),
 ) {
-    var appBarIsFixed by remember { mutableStateOf(false) }
+    var inbox: Map<String, List<VoicemailUiModel>> by remember { mutableStateOf(mapOf()) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+
     var contactPermissionAlreadyRequested by rememberSaveable { mutableStateOf(false) }
     val contactPermissionState = rememberPermissionState(Manifest.permission.READ_CONTACTS) { granted ->
         contactPermissionAlreadyRequested = true
-        if (granted)
-            inboxViewModel.updateInboxWithContacts()
+        if (granted) {
+            //inboxViewModel.updateInboxWithContacts()
+        }
     }
-
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         when (contactPermissionState.status) {
             PermissionStatus.Granted -> {
-                inboxViewModel.updateInboxWithContacts()
+                //inboxViewModel.updateInboxWithContacts()
             }
             is PermissionStatus.Denied -> {
                 if (!contactPermissionAlreadyRequested)
@@ -50,12 +55,22 @@ fun InboxScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        while (viewModel.inboxFlow == null) {
+            delay(300)
+        }
+        viewModel.inboxFlow?.collectLatest {
+            inbox = it
+        }
+    }
+
+
     Scaffold(
-        topBar = { InboxTopAppBar(isFixed = appBarIsFixed, scrollBehavior = scrollBehavior) },
+        topBar = { InboxTopAppBar(scrollBehavior = scrollBehavior) },
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection)
     ) { padding ->
         LazyColumn(modifier = Modifier.padding(padding)) {
-            inboxViewModel.groupedInbox.forEach { (dateTag, voicemails) ->
+            inbox.forEach { (dateTag, voicemails) ->
                 item(key = dateTag) {
                     Text(
                         text = dateTag,
@@ -73,19 +88,15 @@ fun InboxScreen(
                     InboxItem(
                         voicemail = voicemail,
                         onClick = {
-                            inboxViewModel.setVoicemailAsRead(voicemail)
+                            viewModel.setVoicemailAsRead(voicemail)
                             navigator.navigate(VoicemailScreenDestination(voicemail.id))
                         }
                     )
                 }
             }
         }
-        if (inboxViewModel.inboxIsEmpty()) {
-            appBarIsFixed = true
+        if (inbox.isEmpty()) {
             EmptyInboxView()
-        }
-        else {
-            appBarIsFixed = false
         }
     }
 }

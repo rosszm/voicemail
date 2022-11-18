@@ -22,13 +22,12 @@ import dev.zacharyross.voicemail.R
 @Composable
 fun InboxTopAppBar(
     modifier: Modifier = Modifier,
-    isFixed: Boolean?,
     scrollBehavior: TopAppBarScrollBehavior?
 ) {
     var showMoreMenu by remember { mutableStateOf(false) }
 
     CenterAlignedTopAppBar(
-        scrollBehavior = if (isFixed == true) TopAppBarDefaults.pinnedScrollBehavior() else scrollBehavior,
+        scrollBehavior = scrollBehavior,
         colors = smallTopAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
             scrolledContainerColor = MaterialTheme.colorScheme.surface,

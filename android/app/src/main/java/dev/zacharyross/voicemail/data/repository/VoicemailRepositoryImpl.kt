@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import dev.zacharyross.voicemail.domain.model.Voicemail
+import kotlinx.coroutines.withContext
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
@@ -169,23 +170,33 @@ class VoicemailRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getInbox(): Flow<List<Voicemail>> {
-        return localSource.voicemailDao().getVoicemails()
+    override suspend fun getInbox(): Flow<List<Voicemail>> {
+        return withContext(Dispatchers.IO) {
+            return@withContext localSource.voicemailDao().getVoicemails()
+        }
     }
 
-    override fun clearInbox() {
-        localSource.voicemailDao().deleteAllVoicemails()
+    override suspend fun getVoicemail(id: Int): Voicemail {
+        return withContext(Dispatchers.IO) {
+            return@withContext localSource.voicemailDao().getVoicemailFromId(id)
+        }
     }
 
-    override fun getVoicemail(id: Int): Voicemail {
-        return localSource.voicemailDao().getVoicemailFromId(id)
+    override suspend fun updateVoicemail(voicemail: Voicemail) {
+        withContext(Dispatchers.IO) {
+            localSource.voicemailDao().updateVoicemail(VoicemailEntity(voicemail))
+        }
     }
 
-    override fun updateVoicemail(voicemail: Voicemail) {
-        return localSource.voicemailDao().updateVoicemail(VoicemailEntity(voicemail))
+    override suspend fun deleteVoicemail(voicemail: Voicemail) {
+        withContext(Dispatchers.IO) {
+            localSource.voicemailDao().deleteVoicemail(VoicemailEntity(voicemail))
+        }
     }
 
-    override fun deleteVoicemail(voicemail: Voicemail) {
-        localSource.voicemailDao().deleteVoicemail(VoicemailEntity(voicemail))
+    override suspend fun clearInbox() {
+        withContext(Dispatchers.IO) {
+            localSource.voicemailDao().deleteAllVoicemails()
+        }
     }
 }

@@ -22,94 +22,41 @@ import java.time.Duration
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 @Composable
 fun AudioPlayerControls(
-    player: Player?,
-    mediaItemId: Int
+    isPlaying: Boolean,
+    currentPosition: Long,
+    duration: Long,
+    prepare: () -> Unit,
+    play: () -> Unit,
+    pause: () -> Unit,
+    replay: (ms: Long) -> Unit,
+    forward: (ms: Long) -> Unit,
+    seekTo: (ms: Long) -> Unit,
 ) {
-    var isPlaying by remember { mutableStateOf(false) }
-    var isSeeking by remember { mutableStateOf(false) }
-    var currentPosition by remember { mutableStateOf(0L) }
-    var duration by remember { mutableStateOf(0L) }
-
-    LaunchedEffect(player?.isLoading) {
-        while (player == null) delay(100)
-        duration = player.duration
-    }
-
-    DisposableEffect(true) {
-        val listener = object: Player.Listener {
-            override fun onIsPlayingChanged(_isPlaying: Boolean) {
-                isPlaying = _isPlaying
-            }
-        }
-        player?.addListener(listener)
-        onDispose {
-            player?.removeListener(listener)
-        }
-    }
-
-    LaunchedEffect(isPlaying) {
-        while (true) {
-            if (!isSeeking) {
-                currentPosition = player?.currentPosition ?: 0
-                delay(1000)
-            }
-        }
-    }
-
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Slider(
-            value = currentPosition.toFloat(),
-            onValueChange = {
-                isSeeking = true
-                currentPosition = it.toLong()
-            },
-            onValueChangeFinished = {
-                isSeeking = false
-                player?.seekTo(currentPosition)
-            },
-            valueRange = 0f..if (player != null && player.duration != TIME_UNSET)
-                player.duration.toFloat() else 0f
+        MediaSlider(
+            currentPosition = currentPosition,
+            duration = duration,
+            seekTo = seekTo
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            val current = Duration.ofMillis(currentPosition)
-            var mins = current.toMinutesPart()
-            var secs = current.toSecondsPart()
-            Text(
-                text = String.format("%d:%s", mins, if (secs < 10) "0$secs" else "$secs"),
-                fontSize = 12.sp
-            )
-            val remaining = Duration.ofMillis(duration - currentPosition)
-            println(duration)
-            mins = remaining.toMinutesPart()
-            secs = remaining.toSecondsPart()
-            Text(
-                text = String.format("-%d:%s", mins, if (secs < 10) "0$secs" else "$secs"),
-                fontSize = 12.sp
-            )
-        }
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
             IconButton(
                 modifier = Modifier.padding(horizontal = 12.dp),
-                onClick = { player?.seekToPreviousMediaItem() },
+                onClick = { replay(5000) },
                 rippleRadius = 28.dp,
-                enabled = player?.hasPreviousMediaItem() == true
+                enabled = currentPosition != 0L
             ) {
                 Icon(
                     modifier = Modifier.size(36.dp),
                     imageVector = Icons.Rounded.Replay5,
-                    tint = if (player?.hasPreviousMediaItem() == true) {
+                    tint = if (currentPosition == 0L) {
                         MaterialTheme.colorScheme.primary
                     }
                     else {
@@ -121,12 +68,11 @@ fun AudioPlayerControls(
             IconButton(
                 modifier = Modifier.padding(horizontal = 16.dp),
                 onClick = {
-                    isPlaying = if (isPlaying) {
-                        player?.pause()
-                        false
+                    if (isPlaying) {
+                        pause()
                     } else {
-                        player?.play()
-                        true
+                        prepare()
+                        play()
                     }
                 },
                 rippleRadius = 40.dp
@@ -145,14 +91,14 @@ fun AudioPlayerControls(
             }
             IconButton(
                 modifier = Modifier.padding(horizontal = 12.dp),
-                onClick = { player?.seekToNextMediaItem() },
+                onClick = { forward(5000) },
                 rippleRadius = 28.dp,
-                enabled = player?.hasNextMediaItem() == true
+                enabled = currentPosition != duration
             ) {
                 Icon(
                     modifier = Modifier.size(36.dp),
                     imageVector = Icons.Rounded.Forward5,
-                    tint = if (player?.hasNextMediaItem() == true) {
+                    tint = if (currentPosition == duration) {
                         MaterialTheme.colorScheme.primary
                     }
                     else {
@@ -161,6 +107,64 @@ fun AudioPlayerControls(
                     contentDescription = null
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun MediaSlider(
+    currentPosition: Long,
+    duration: Long,
+    seekTo: (ms: Long) -> Unit,
+) {
+    var elapsed by remember { mutableStateOf(0f) }
+    var isSeeking by remember { mutableStateOf(false) }
+
+    val maxDuration by remember { derivedStateOf {
+        if (duration != TIME_UNSET) duration.toFloat() else 0f
+    } }
+    val timeElapsedText by remember { derivedStateOf {
+        val current = Duration.ofMillis(elapsed.toLong())
+        val mins = current.toMinutesPart()
+        val secs = current.toSecondsPart()
+        String.format("%d:%s", mins, if (secs < 10) "0$secs" else "$secs")
+    }}
+    val timeRemainingText by remember { derivedStateOf {
+        val current = Duration.ofMillis(maxDuration.toLong())
+        val mins = current.toMinutesPart()
+        val secs = current.toSecondsPart()
+        String.format("%d:%s", mins, if (secs < 10) "0$secs" else "$secs")
+    }}
+
+    if (!isSeeking) {
+        LaunchedEffect(Unit) {
+            while(true) {
+                elapsed = currentPosition.toFloat()
+                delay(1000)
+            }
+        }
+
+    }
+
+    Column {
+        Slider(
+            value = elapsed,
+            onValueChange = {
+                isSeeking = true
+                elapsed = it
+            },
+            onValueChangeFinished = {
+                isSeeking = false
+                seekTo(elapsed.toLong())
+            },
+            valueRange = 0f..maxDuration
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(text = timeElapsedText, fontSize = 12.sp)
+            Text(text = timeRemainingText, fontSize = 12.sp)
         }
     }
 }

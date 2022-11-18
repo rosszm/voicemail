@@ -20,17 +20,17 @@ interface VoicemailDao {
     fun getVoicemailsFrom(phoneNumber: String): VoicemailEntity
 
     @Update
-    fun updateVoicemail(voicemail: VoicemailEntity)
+    suspend fun updateVoicemail(voicemail: VoicemailEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertVoicemail(voicemail: VoicemailEntity)
+    suspend fun insertVoicemail(voicemail: VoicemailEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insertVoicemails(vararg voicemail: VoicemailEntity)
+    suspend fun insertVoicemails(vararg voicemail: VoicemailEntity)
 
     @Delete
-    fun deleteVoicemail(voicemail: VoicemailEntity)
+    suspend fun deleteVoicemail(voicemail: VoicemailEntity)
 
     @Query("DELETE FROM voicemail")
-    fun deleteAllVoicemails()
+    suspend fun deleteAllVoicemails()
 }

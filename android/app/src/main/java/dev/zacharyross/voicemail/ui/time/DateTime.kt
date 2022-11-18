@@ -37,21 +37,18 @@ fun DateTimeText(
     fontWeight: FontWeight = FontWeight.Normal
 ) {
     val context = LocalContext.current
-    val composableScope = rememberCoroutineScope()
-    var timeSince by remember { mutableStateOf("") }
+    var timeSince by remember {
+        mutableStateOf(getFormattedDateTimeString(dateTime, context))
+    }
 
     // Effect that updates the displayed datetime text every minute. Only for datetime values that
     // occurred less than 1 day ago; this prevents the job from doing work that does not change the
     // displayed value.
-    DisposableEffect(dateTime) {
-        val job = composableScope.launch {
+    LaunchedEffect(dateTime) {
+        while(ChronoUnit.DAYS.between(dateTime, ZonedDateTime.now()) < 2) {
             timeSince = getFormattedDateTimeString(dateTime, context)
-            while(ChronoUnit.DAYS.between(dateTime, ZonedDateTime.now()) < 2) {
-                timeSince = getFormattedDateTimeString(dateTime, context)
-                delay(1.minutes)
-            }
+            delay(1.minutes)
         }
-        onDispose { job.cancel() }
     }
 
     Text(
@@ -66,7 +63,7 @@ fun DateTimeText(
 /**
  * Returns a date time string formatted based on the duration of time since the given date-time.
  */
-fun getFormattedDateTimeString(dateTime: ZonedDateTime, context: Context): String {
+private fun getFormattedDateTimeString(dateTime: ZonedDateTime, context: Context): String {
     return if (ChronoUnit.MINUTES.between(dateTime, ZonedDateTime.now()) < 1) {
         context.getString(R.string.just_now)
     }

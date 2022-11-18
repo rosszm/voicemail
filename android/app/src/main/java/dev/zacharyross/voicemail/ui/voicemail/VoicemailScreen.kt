@@ -22,6 +22,7 @@ import dev.zacharyross.voicemail.ui.time.DateTimeText
 import dev.zacharyross.voicemail.ui.voicemail.button.CallBackButton
 import dev.zacharyross.voicemail.ui.voicemail.button.SendTextButton
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import java.time.ZonedDateTime
 
 
@@ -32,10 +33,10 @@ import java.time.ZonedDateTime
 @Composable
 fun VoicemailScreen(
     navigator: DestinationsNavigator,
+    viewModel: VoicemailViewModel = hiltViewModel(),
     id: Int
 ) {
-    val viewModel: VoicemailViewModel = hiltViewModel()
-    var player: Player? by remember { mutableStateOf(null) }
+    var currentPosition by remember { mutableStateOf(0L) }
     var voicemail: VoicemailUiModel? by remember { mutableStateOf(null) }
 
     LaunchedEffect(true) {
@@ -43,7 +44,12 @@ fun VoicemailScreen(
             delay(3)
         }
         voicemail = viewModel.voicemail
-        player = viewModel.player
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.playerPositionFlow?.collectLatest {
+            currentPosition = it
+        }
     }
 
     if (voicemail != null) {
@@ -95,7 +101,11 @@ fun VoicemailScreen(
                         )
                     }
                     //println(player)
-                    AudioPlayerControls(player = player, mediaItemId = id)
+                    AudioPlayerControls(
+                        player = viewModel.player,
+                        currentPosition = currentPosition,
+                        duration = viewModel.duration.value,
+                    )
                     Column {
                         Text(
                             text = stringResource(R.string.transcription),

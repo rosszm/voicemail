@@ -8,8 +8,6 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
@@ -17,6 +15,8 @@ import com.ramcosta.composedestinations.DestinationsNavHost
 import com.ramcosta.composedestinations.animations.rememberAnimatedNavHostEngine
 import dagger.hilt.android.AndroidEntryPoint
 import dev.zacharyross.voicemail.ui.NavGraphs
+import dev.zacharyross.voicemail.ui.destinations.InboxScreenDestination
+import dev.zacharyross.voicemail.ui.destinations.VoicemailScreenDestination
 import dev.zacharyross.voicemail.ui.inbox.InboxViewModel
 import dev.zacharyross.voicemail.ui.theme.VoicemailTheme
 import dev.zacharyross.voicemail.ui.voicemail.VoicemailViewModel

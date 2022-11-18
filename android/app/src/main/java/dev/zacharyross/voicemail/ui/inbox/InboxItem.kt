@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -22,11 +25,16 @@ fun InboxItem(
     voicemail: VoicemailUiModel,
     onClick: () -> Unit,
 ) {
-    var displayName = PhoneNumberUtils.formatNumber(voicemail.fromNumber, "1")
+    val displayName by remember { derivedStateOf {
+        if (voicemail.contact != null) {
+            voicemail.contact.displayName
+        }
+        else PhoneNumberUtils.formatNumber(voicemail.fromNumber, "1")
+    } }
+    val fontWeight by remember { derivedStateOf {
+        if (voicemail.unread) FontWeight.Bold else FontWeight.Normal
+    } }
 
-    if (voicemail.contact != null) {
-        displayName = voicemail.contact.displayName
-    }
 
     Box(modifier = Modifier // Clickable area
         .clickable { onClick() }
@@ -41,7 +49,7 @@ fun InboxItem(
                 ) {
                     Text(
                         text = displayName,
-                        fontWeight = if (voicemail.unread) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = fontWeight,
                         fontSize = 16.sp
                     )
                     DateTimeText(
@@ -49,7 +57,8 @@ fun InboxItem(
                         color = if (voicemail.unread) MaterialTheme.colorScheme.onSurface
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
-                        fontWeight = if (voicemail.unread) FontWeight.Bold else FontWeight.Normal)
+                        fontWeight = fontWeight
+                    )
                 }
                 Row(
                     // info row
@@ -61,7 +70,7 @@ fun InboxItem(
                         text = voicemail.transcription,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        fontWeight = if (voicemail.unread) FontWeight.Bold else FontWeight.Normal,
+                        fontWeight = fontWeight,
                         color = if (voicemail.unread) MaterialTheme.colorScheme.onSurface
                             else MaterialTheme.colorScheme.onSurfaceVariant,
                     )

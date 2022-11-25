@@ -1,2 +1,6 @@
 .vscode/
-.idea/
+.env
+__pycache__
+
+# ignore codegen files
+voicemail_pb*

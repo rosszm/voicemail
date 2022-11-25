@@ -5,27 +5,22 @@ A voicemail system designed to provide standard and visual voicemail services fo
 The main motivation for this system was the limited availability of Google Voice in certain areas
 and a lack of carrier voicemail functionality.
 
-## Clients
+## Repository Contents
 ### [Android App](android)
 This is the primary client for the voicemail services. It provides standard and visual voicemail
 features, and push notifications for new voicemail messages.
-
-## Services
-### [API Service](api-service)
-This service acts as the interface between client applications and the voicemail system. It supports
-requests through its REST API.
 
 ### [Voicemail Service](voicemail-service)
 The primary service for handling voicemail messages. This service acts as the controller for
 incoming calls, ensuring they are handled as necessary.
 
-### [Transcriber Service](transcriber-service)
-A gRPC based service to transcribe audio into text. This service is called by the voicemail system
-to transcribe messages.
+### [Protobuf](protobuf)
+The protocol buffer definitions for the voicemail project.
 
-## Shared
-### [Protos](protos)
-The gRPC protocol buffer definitions for the voicemail project.
 
-### [Database](database)
-A python package for interacting with and initializing the voicemail database.
+## System Architecture
+
+This system follows a straightforward PUB/SUB pattern where the voicemail service acts as a
+publisher and publishes message to its corresponding queue. The android app implements a background
+service that consumes messages from this queue, updating its internal database, and notifying users
+via notifications.

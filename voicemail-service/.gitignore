@@ -1,5 +1,12 @@
 __pycache__
 
+# setuptools build files
 voicemail.egg-info/
 build/
 dist/
+
+# GCP service account cert file
+service_cert.json
+
+# do not include audio prompts
+prompts/

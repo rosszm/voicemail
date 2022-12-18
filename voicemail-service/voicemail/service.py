@@ -99,7 +99,7 @@ class VoicemailService(Consumer):
 
         msg = messaging.Message(
             data={ "message_id": msg_id },
-            token=user.get("fcm_token"))
+            topic=user.id)
 
         try:
             messaging.send(msg, app=self.firebase)

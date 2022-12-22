@@ -1,6 +1,6 @@
 [project]
 name = "voicemail"
-version = "0.1.5"
+version = "1.0.0"
 description = ""
 authors = [{name = "Zack Ross", email = "zmr462@usask.ca"}]
 readme = "README.rst"

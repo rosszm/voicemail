@@ -1,17 +1,18 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
-    id 'kotlin-kapt'
     id 'com.google.dagger.hilt.android'
-
+    id 'com.google.gms.google-services'
+    id 'com.google.devtools.ksp'
+    id 'kotlin-kapt'
 }
 
 android {
-    namespace 'com.example.voicemail'
+    namespace 'dev.zacharyross.voicemail'
     compileSdk 33
 
     defaultConfig {
-        applicationId "com.example.voicemail"
+        applicationId "dev.zacharyross.voicemail"
         minSdk 33
         targetSdk 33
         versionCode 1
@@ -40,38 +41,108 @@ android {
         compose true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion '1.1.1'
+        kotlinCompilerExtensionVersion '1.3.2'
     }
     packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
     }
+    applicationVariants.all { variant ->
+        kotlin.sourceSets {
+            getByName(variant.name) {
+                kotlin.srcDir("build/generated/ksp/${variant.name}/kotlin")
+            }
+        }
+    }
 }
 
 dependencies {
-    implementation platform('com.google.firebase:firebase-bom:31.0.0')
-    implementation 'com.google.firebase:firebase-auth-ktx'
-
-    implementation "com.google.dagger:hilt-android:2.44"
-    kapt "com.google.dagger:hilt-compiler:2.44"
-
-    implementation 'androidx.core:core-ktx:1.7.0'
+    // kotlin/android dependencies
+    implementation 'androidx.core:core-ktx:1.9.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
-    implementation 'androidx.activity:activity-compose:1.3.1'
+    implementation 'androidx.concurrent:concurrent-futures-ktx:1.1.0'
+    implementation 'androidx.startup:startup-runtime:1.1.1'
+
+    // hilt dependency injection
+    def hilt_version = "2.44"
+    implementation "com.google.dagger:hilt-android:$hilt_version"
+    kapt "com.google.dagger:hilt-compiler:$hilt_version"
+    implementation "androidx.hilt:hilt-navigation-compose:1.0.0"
+    implementation 'androidx.hilt:hilt-work:1.0.0'
+    kapt("androidx.hilt:hilt-compiler:1.0.0")
+
+    // work
+    implementation 'androidx.work:work-runtime-ktx:2.7.1'
+
+    // google phone utils
+    implementation 'com.googlecode.libphonenumber:libphonenumber:8.2.0'
+
+    // google play integrity
+    implementation 'com.google.android.play:integrity:1.0.2'
+
+    // splash screen
+    implementation 'androidx.core:core-splashscreen:1.0.0'
+
+    // jetpack compose
+    implementation 'androidx.activity:activity-compose:1.6.1'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation 'androidx.compose.material3:material3:1.0.0-rc01'
-    implementation 'com.google.android.material:material:1.6.1'
+
+    // accompanist
+    def accompanist_version = "0.27.0"
+    implementation "com.google.accompanist:accompanist-systemuicontroller:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-permissions:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-pager:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-pager-indicators:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-navigation-animation:$accompanist_version"
+    implementation "com.google.accompanist:accompanist-navigation-material:$accompanist_version"
+
+    // material 3
+    implementation 'androidx.compose.material3:material3:1.1.0-alpha01'
+    implementation 'com.google.android.material:material:1.7.0'
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
+
+    // compose destinations
+    def compose_destinations_version = '1.7.23-beta'
+    implementation "io.github.raamcosta.compose-destinations:animations-core:$compose_destinations_version"
+    ksp "io.github.raamcosta.compose-destinations:ksp:$compose_destinations_version"
+
+    // media 3
+    def media3_version = "1.0.0-beta02"
+    implementation "androidx.media3:media3-exoplayer:$media3_version"
+    implementation "androidx.media3:media3-ui:$media3_version"
+    implementation "androidx.media3:media3-session:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-dash:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-hls:$media3_version"
+    implementation "androidx.media3:media3-exoplayer-rtsp:$media3_version"
+
+    // room database
+    def room_version = "2.4.3"
+    implementation "androidx.room:room-runtime:$room_version"
+    annotationProcessor "androidx.room:room-compiler:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
+    testImplementation "androidx.room:room-testing:$room_version"
+    implementation "androidx.room:room-paging:$room_version"
+    implementation "androidx.room:room-ktx:$room_version"
+
+    // firebase
+    implementation platform('com.google.firebase:firebase-bom:31.1.0')
+    implementation 'com.google.firebase:firebase-auth-ktx'
+    implementation 'com.google.firebase:firebase-firestore-ktx'
+    implementation 'com.google.firebase:firebase-messaging-ktx'
+
+    // testing & debugging
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.3'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.4.0'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_version"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:1.7.20"
 }
 
 kapt {
     correctErrorTypes true
 }
+

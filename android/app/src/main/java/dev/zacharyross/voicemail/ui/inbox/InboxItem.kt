@@ -1,56 +1,49 @@
 package dev.zacharyross.voicemail.ui.inbox
 
-import android.content.ContentResolver
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import android.provider.ContactsContract
+
 import android.telephony.PhoneNumberUtils
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.zacharyross.voicemail.ui.time.DateText
+import dev.zacharyross.voicemail.ui.model.DisplayContact
+import dev.zacharyross.voicemail.ui.model.VoicemailUiModel
+import dev.zacharyross.voicemail.ui.common.time.DateTimeText
+import java.util.*
 
 
-/**
- *
- */
-data class DisplayContact(
-    val displayName: String,
-    val photoUri: Uri?,
-)
-
-
-/**
- *
- */
 @Composable
-fun InboxItem(voicemail: Voicemail) {
-    var displayName = PhoneNumberUtils.formatNumber(voicemail.from, "1")
-    var displayImage: Bitmap? = null
-
-    val contactInfo = getContactInfo(LocalContext.current.contentResolver, voicemail.from)
-    if (contactInfo != null) {
-        displayName = contactInfo.displayName
-        if (contactInfo.photoUri != null) {
-            displayImage = BitmapFactory.decodeFile(contactInfo.photoUri.path)
+fun InboxItem(
+    voicemail: VoicemailUiModel,
+    onClick: () -> Unit,
+) {
+    val displayName by remember { derivedStateOf {
+        if (voicemail.contact != null) {
+            voicemail.contact.displayName
         }
-    }
+        else PhoneNumberUtils.formatNumber(voicemail.fromNumber, Locale.getDefault().country)
+    } }
+    val fontWeight by remember { derivedStateOf {
+        if (voicemail.unread) FontWeight.Bold else FontWeight.Normal
+    } }
 
     Box(modifier = Modifier // Clickable area
-        .clickable { voicemail.unread = false }
+        .clickable { onClick() }
     ) {
         Row() {
             Column(
-                Modifier.padding(vertical = 16.dp, horizontal = 24.dp)
+                Modifier.padding(vertical = 18.dp, horizontal = 18.dp)
             ) {
                 Row( // Title row
                     Modifier.fillMaxWidth(),
@@ -58,15 +51,16 @@ fun InboxItem(voicemail: Voicemail) {
                 ) {
                     Text(
                         text = displayName,
-                        fontWeight = if (voicemail.unread) FontWeight.Bold else FontWeight.Normal,
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary
-                        )
-                    DateText(
+                        fontWeight = fontWeight,
+                        fontSize = 16.sp
+                    )
+                    DateTimeText(
                         dateTime = voicemail.dateTime,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = if (voicemail.unread) MaterialTheme.colorScheme.onSurface
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
-                        fontWeight = if (voicemail.unread) FontWeight.Bold else FontWeight.Normal)
+                        fontWeight = fontWeight
+                    )
                 }
                 Row(
                     // info row
@@ -75,37 +69,15 @@ fun InboxItem(voicemail: Voicemail) {
                         .fillMaxWidth(),
                 ) {
                     Text(
-                        text = voicemail.transcription,
+                        text = voicemail.transcription.ifBlank { "No transcription available" },
                         maxLines = 1,
-
                         overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.secondary
+                        fontWeight = fontWeight,
+                        fontStyle = if (voicemail.transcription.isBlank()) FontStyle.Italic else FontStyle.Normal,
+                        color = if (voicemail.unread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
         }
     }
-}
-
-
-/**
- *
- */
-private fun getContactInfo(resolver: ContentResolver, phoneNumber: String): DisplayContact? {
-    val uri = Uri.withAppendedPath(
-        ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-        Uri.encode(phoneNumber))
-    val cur = resolver.query(uri, arrayOf(
-        ContactsContract.PhoneLookup.DISPLAY_NAME,
-        ContactsContract.PhoneLookup.PHOTO_THUMBNAIL_URI
-    ), null, null)
-    var res: DisplayContact? = null
-    if(cur != null && cur.moveToFirst()) {
-        val displayName = cur.getString(0)
-        val photoUriString = cur.getString(1)
-        val photoUri = if (photoUriString != null) Uri.parse(photoUriString) else null
-        res = DisplayContact(displayName, photoUri)
-        cur.close()
-    }
-    return res
 }

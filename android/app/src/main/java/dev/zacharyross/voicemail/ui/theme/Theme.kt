@@ -56,7 +56,8 @@ fun VoicemailTheme(
         else -> LightColorScheme
     }
 
-    systemUiController.setSystemBarsColor(color = colorScheme.background)
+    systemUiController.setStatusBarColor(color = colorScheme.background)
+    systemUiController.setNavigationBarColor(color = colorScheme.background)
 
 
     MaterialTheme(

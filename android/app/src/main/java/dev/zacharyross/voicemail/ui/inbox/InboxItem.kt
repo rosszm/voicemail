@@ -11,13 +11,16 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.zacharyross.voicemail.ui.model.DisplayContact
 import dev.zacharyross.voicemail.ui.model.VoicemailUiModel
-import dev.zacharyross.voicemail.ui.time.DateTimeText
+import dev.zacharyross.voicemail.ui.common.time.DateTimeText
+import java.util.*
 
 
 @Composable
@@ -29,12 +32,11 @@ fun InboxItem(
         if (voicemail.contact != null) {
             voicemail.contact.displayName
         }
-        else PhoneNumberUtils.formatNumber(voicemail.fromNumber, "1")
+        else PhoneNumberUtils.formatNumber(voicemail.fromNumber, Locale.getDefault().country)
     } }
     val fontWeight by remember { derivedStateOf {
         if (voicemail.unread) FontWeight.Bold else FontWeight.Normal
     } }
-
 
     Box(modifier = Modifier // Clickable area
         .clickable { onClick() }
@@ -67,12 +69,12 @@ fun InboxItem(
                         .fillMaxWidth(),
                 ) {
                     Text(
-                        text = voicemail.transcription,
+                        text = voicemail.transcription.ifBlank { "No transcription available" },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontWeight = fontWeight,
-                        color = if (voicemail.unread) MaterialTheme.colorScheme.onSurface
-                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontStyle = if (voicemail.transcription.isBlank()) FontStyle.Italic else FontStyle.Normal,
+                        color = if (voicemail.unread) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

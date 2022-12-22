@@ -8,7 +8,7 @@ import dev.zacharyross.voicemail.data.source.local.entity.VoicemailEntity
 import dev.zacharyross.voicemail.data.source.local.util.ZonedDateTimeConverter
 
 
-@Database(entities = [VoicemailEntity::class], version = 1, exportSchema = false)
+@Database(entities = [VoicemailEntity::class], version = 3, exportSchema = false)
 @TypeConverters(ZonedDateTimeConverter::class)
 abstract class VoicemailDatabase : RoomDatabase() {
     abstract fun voicemailDao(): VoicemailDao

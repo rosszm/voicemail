@@ -50,12 +50,13 @@ class VoicemailService(Consumer):
         user = (users_ref.where("voicemail_number", "==", call.to_number).get()[0:1] or [None])[0]
 
         result = await call.answer()
-        if result.successful:
+        if result.successful and user != None:
             logging.info(f"[{call.id}] Answered call")
             await call.play_silence(1)
             await call.play_audio(f"{self.cms_url}/leave_message.mp3", volume=16)
 
-            recording = await call.record_async(beep=True, direction="speak", record_format="mp3")
+            recording = await call.record_async(
+                beep=True, direction="speak", record_format="mp3", end_silence_timeout=3)
 
             elapsed = 0
             while (elapsed < MAX_MSG_DURATION and not recording.completed):
@@ -76,33 +77,55 @@ class VoicemailService(Consumer):
                 await call.hangup()
                 logging.info(f"[{call.id}] Ended call")
         else:
+            call.hangup()
             logging.error(f"[{call.id}] Could not answer incoming call")
 
     def _on_successful_recording(self, user, call: Call, recording: RecordAction):
         """
         Handles when a voicemail message is successfully recorded.
         """
+        msg_id = nanoid.generate()
         transcription = self.asr.transcribe(recording.url)
 
-        msg_id = nanoid.generate()
-        msg_data = {
+        self._save_message(call, user.id, msg_id, msg_data={
             "from_number": call.from_number,
             "audio_url": recording.url,
             "transcription": transcription,
             "timestamp": datetime.now(timezone.utc)
-        }
+        })
+        self._notify_clients(call, user.id, msg_data={
+            "msg_id": msg_id,
+            "from_number": call.from_number,
+            "transcription": transcription,
+        })
+
+    def _save_message(self, call: Call, user_id: str, msg_id: str, msg_data: dict):
+        """
+        Saves a message to the voicemail inbox.
+        """
         try:
-            messages_ref = self.firestore.collection("users").document(user.id).collection("messages")
+            messages_ref = self.firestore.collection("users").document(user_id).collection("messages")
             messages_ref.document(msg_id).set(msg_data)
+            logging.info(f"[{call.id}] saved message to remote: {msg_id}")
         except Exception as err:
             logging.error(f"[{call.id}] Could not save message: {err}")
 
-        msg = messaging.Message(
-            data={ "message_id": msg_id },
-            topic=user.id)
+    def _notify_clients(self, call: Call, user_id: str, msg_data: dict):
+        """
+        Sends an FCM message to the user's clients notifying them of a new voicemail.
+        """
+        clients_ref = self.firestore.collection("clients")
+        clients = clients_ref.where("user", "==", user_id).get()
+        client_tokens = [client.id for client in clients]
+
+        msg = messaging.MulticastMessage(
+            data=msg_data,
+            tokens=client_tokens)
 
         try:
-            messaging.send(msg, app=self.firebase)
+            messaging.send_multicast(msg, app=self.firebase)
+            msg_id = msg_data["msg_id"]
+            logging.info(f"[{call.id}] sent FCM message: {msg_id}")
         except Exception as err:
             logging.error(f"[{call.id}] Could not send message: {err}")
 

@@ -114,7 +114,7 @@ nvidia-cuda-runtime-cu11==11.7.99
 nvidia-cudnn-cu11==8.5.0.96
 oauthlib==3.2.2
 omegaconf==2.1.2
-onnx==1.12.0
+onnx==1.13.0
 OpenCC==1.1.4
 packaging==21.3
 pandas==1.5.2

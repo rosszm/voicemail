@@ -57,7 +57,7 @@ ftfy==6.1.1
 g2p-en==2.1.0
 gdown==4.5.3
 gitdb==4.0.10
-GitPython==3.1.29
+GitPython==3.1.30
 google-auth==2.14.1
 google-auth-oauthlib==0.4.6
 grpcio==1.50.0

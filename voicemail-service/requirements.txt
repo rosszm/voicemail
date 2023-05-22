@@ -101,7 +101,7 @@ marshmallow==3.19.0
 matplotlib==3.6.2
 matplotlib-inline==0.1.6
 mecab-python3==1.0.5
-mpmath==1.2.1
+mpmath==1.3.0
 multidict==6.0.2
 nemo-toolkit==1.12.0
 nest-asyncio==1.5.6

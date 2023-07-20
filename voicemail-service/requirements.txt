@@ -154,7 +154,7 @@ pydantic==1.10.2
 pyDeprecate==0.3.2
 pydub==0.25.1
 pygls==0.13.0
-Pygments==2.13.0
+Pygments==2.15.0
 PyJWT==2.6.0
 pylatexenc==2.10
 pyparsing==3.0.9
